@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: sgu-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sgu
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - sgu-net
+
+  backend:
+    build: ./server
+    container_name: sgu-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/sgu?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    depends_on:
+      - mysql
+    ports:
+      - "8080:8080"
+    networks:
+      - sgu-net
+
+  frontend:
+    build: ./sgu-frontend
+    container_name: sgu-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - sgu-net
+
+volumes:
+  mysql_data:
+
+networks:
+  sgu-net:
