@@ -2,49 +2,52 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_REPO = "tuusuario/sgu-app"
+        PROJECT_NAME = "SGUADHR10B"
     }
 
     stages {
-        stage('Checkout') {
+        stage('Detener servicios previos') {
             steps {
-                git credentialsId: 'github-creds', url: 'https://github.com/AlanVortex/SGU-ADHR-10B.git'
+                bat """
+                    docker compose -p %PROJECT_NAME% down || exit /b 0
+                """
             }
         }
 
-        stage('Backend Build') {
+        stage('Eliminar imágenes antiguas') {
             steps {
-                dir('server') {
-                    sh './mvnw clean package -DskipTests'
-                }
+                bat """
+                    for /f "tokens=*" %%i in ('docker images --filter "label=com.docker.compose.project=%PROJECT_NAME%" -q') do (
+                        docker rmi -f %%i
+                    )
+                """
             }
         }
 
-        stage('Frontend Build') {
+        stage('Clonando repositorio') {
             steps {
-                dir('sgu-frontend') {
-                    sh 'npm install'
-                    sh 'npm run build'
-                }
+                checkout scm
             }
         }
 
-        stage('Docker Build') {
+        stage('Construyendo y desplegando con Docker') {
             steps {
-                sh 'docker-compose build'
+                bat """
+                    docker compose -p %PROJECT_NAME% up --build -d
+                """
             }
         }
+    }
 
-        stage('Stop Running Containers') {
-            steps {
-                sh 'docker-compose down || true'
-            }
+    post {
+        success {
+            echo '✅ Deploy exitoso'
         }
-
-        stage('Deploy') {
-            steps {
-                sh 'docker-compose up -d'
-            }
+        failure {
+            echo '❌ Falló el pipeline'
+        }
+        always {
+            echo '🏁 Pipeline terminado'
         }
     }
 }
