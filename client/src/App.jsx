@@ -8,7 +8,6 @@ function App() {
   const [phone, setPhone] = useState("");
   const [editingUser, setEditingUser] = useState(null);
 
-// API URL construida con variables de entorno Vite
 const API_URL = `${import.meta.env.VITE_API_PROTOCOL}://${import.meta.env.VITE_API_HOST}:${import.meta.env.VITE_API_PORT}${import.meta.env.VITE_API_BASE}/users`;
 
   const getUsers = async () => {
